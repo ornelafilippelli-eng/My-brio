@@ -1,0 +1,25 @@
+{
+  "name": "my-brio",
+  "version": "1.0.0",
+  "description": "BRIOSCHI AI RIGORI! - A penalty goalkeeper game",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ornelafilippelli-eng/My-brio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ornelafilippelli-eng/My-brio/issues"
+  },
+  "homepage": "https://github.com/ornelafilippelli-eng/My-brio#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
