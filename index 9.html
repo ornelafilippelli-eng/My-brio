@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>BRIOSCHI AI RIGORI!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body, html { width: 100%; height: 100%; overflow: hidden; background: #070a12; font-family: 'Arial Black', sans-serif; touch-action: none; user-select: none; }
+  
+  #game-container { width: 100%; height: 58vh; position: relative; background: #0c1020; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  
+  /* UI Superiore */
+  #ui-top { position: absolute; top: 12px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 10px; z-index: 5; }
+  .ui-element { background: rgba(15, 23, 42, 0.9); color: #fff; padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 900; border: 2px solid #3b82f6; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+  #lives-display { color: #f43f5e; border-color: #f43f5e; }
+  #level-display { color: #fbbf24; border-color: #fbbf24; }
+
+  /* Area Controlli */
+  #controls { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    padding: 25px 20px 0 20px; 
+    background: #0f172a; 
+    height: 42vh; 
+    border-top: 4px solid #1e293b; 
+  }
+  
+  .btn-arrow { width: 82px; height: 82px; background: linear-gradient(135deg, #334155, #1e293b); border: 3px solid #475569; border-radius: 50%; color: #3b82f6; font-size: 38px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 0 #000; transition: all 0.05s; }
+  .btn-arrow:active { background: linear-gradient(135deg, #1d4ed8, #1e40af); border-color: #60a5fa; color: #fff; transform: translateY(4px); box-shadow: 0 2px 0 #000; }
+  
+  .btn-dive { flex-grow: 1; max-width: 150px; margin: 0 15px; height: 82px; border-radius: 25px; background: linear-gradient(135deg, #7c2d12, #9a3412); border: 3px solid #ea580c; color: #fff; font-size: 18px; font-weight: 900; box-shadow: 0 6px 0 #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.05s; }
+  .btn-dive:active { background: linear-gradient(135deg, #ea580c, #f97316); border-color: #ffedd5; transform: translateY(4px); box-shadow: 0 2px 0 #000; }
+  .btn-dive span { font-size: 26px; }
+
+  /* Schermate di Stato */
+  #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 10, 18, 0.96); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; z-index: 10; }
+  #overlay h2 { color: #3b82f6; font-size: 32px; margin-bottom: 10px; text-align: center; }
+  #overlay p { color: #94a3b8; max-width: 310px; font-size: 15px; text-align: center; margin-bottom: 25px; line-height: 1.5; }
+  .start-btn { background: #3b82f6; color: #fff; border: none; padding: 16px 45px; font-size: 18px; font-weight: bold; border-radius: 35px; box-shadow: 0 5px 0 #1d4ed8; cursor: pointer; }
+  
+  /* Schermata Lettera e Regalo */
+  #trophy-popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1e1b4b 20%, #090514 100%); z-index: 999; color: #fff; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+  
+  .pippa-title { color: #f43f5e; font-size: 28px; line-height: 1.4; margin-bottom: 30px; text-shadow: 0 0 10px rgba(244, 63, 94, 0.5); }
+  
+  .letter-container { background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 255, 255, 0.15); padding: 25px; border-radius: 20px; max-width: 340px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .letter-text { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 18px; color: #f8fafc; line-height: 1.6; text-align: left; font-weight: 500; }
+  .letter-signature { text-align: right; font-weight: 900; color: #fbbf24; font-size: 22px; margin-top: 15px; font-family: 'Arial Black', sans-serif; }
+  
+  .gift-btn { display: block; width: 100%; max-width: 290px; background: linear-gradient(to right, #ff2a5f, #ff7e40); color: #fff; text-decoration: none; padding: 18px 20px; font-size: 18px; font-weight: 900; border-radius: 40px; text-align: center; border: 2px solid #fff; box-shadow: 0 6px 20px rgba(255, 42, 95, 0.5); margin-top: 10px; }
+  .next-btn { background: #3b82f6; color: #fff; border: none; padding: 16px 50px; font-size: 18px; font-weight: bold; border-radius: 35px; box-shadow: 0 5px 0 #1d4ed8; cursor: pointer; }
+  .trophy-btn { background: rgba(255,255,255,0.05); color: #64748b; border: 1px solid #334155; padding: 10px 20px; font-size: 13px; border-radius: 25px; margin-top: 25px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="ui-top">
+    <div class="ui-element" id="score-display">PARATE: 0</div>
+    <div class="ui-element" id="level-display">LIVELLO: 1</div>
+    <div class="ui-element" id="lives-display">VITE: ❤❤❤❤❤❤❤❤❤</div>
+  </div>
+  
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Schermata Finale a Fasi -->
+  <div id="trophy-popup">
+    <!-- Fase 1: Presa in giro -->
+    <div id="phase-pippa" style="display: block;">
+      <h2 class="pippa-title">HAI VINTO!!!<br>sei stato una vera pippa 🤣</h2>
+      <button class="next-btn" onclick="showLetterPhase()">AVANTI</button>
+    </div>
+
+    <!-- Fase 2: Lettera di Orny e Bottone Amazon -->
+    <div id="phase-letter" style="display: none;">
+      <div class="letter-container">
+        <div class="letter-text">
+          Ciao Da!! È una stupidata il premio.<br>
+          È un fioretto.<br>
+          Grazie di aver giocato.<br>
+          Ti voglio bene e mi manchi tanto!
+          <div class="letter-signature">Orny</div>
+        </div>
+      </div>
+      <a href="https://www.amazon.it/g/X6C5K543KQZ2BY?t=SvL" target="_blank" class="gift-btn">🎁 APRI IL REGALO AMAZON</a>
+      <button class="trophy-btn" onclick="closeTrophy()">Continua a giocare</button>
+    </div>
+  </div>
+</div>
+
+<div id="controls">
+  <div class="btn-arrow" id="leftBtn">◀</div>
+  <div class="btn-dive" id="diveBtn"><span>🧤</span>TUFFO</div>
+  <div class="btn-arrow" id="rightBtn">▶</div>
+</div>
+
+<div id="overlay">
+  <h2 id="overlayTitle">BRIOSCHI AI RIGORI!</h2>
+  <p id="overlayText">Difendi i pali! I rigori arrivano dal dischetto in basso, aumenta i tuoi riflessi di livello in livello!</p>
+  <button class="start-btn" id="mainBtn" onclick="startGame()">GIOCA</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let score = 0, lives = 9, level = 1, isPlaying = false;
+let groundY, portaX, portaW, portaH, portaTopY;
+
+let shakeTimer = 0, flashColor = null;
+let feedbackText = "", feedbackTimer = 0, levelUpTimer = 0;
+let trophyUnlocked = false, blockLaunch = false;
+
+let keeper = { x: 0, y: 0, w: 32, h: 76, speed: 9.5, isDiving: false, diveDir: 0, diveFrame: 0 };
+let ball = { x: 0, y: 0, vx: 0, vy: 0, r: 11, active: false, spin: 0 };
+let moveLeft = false, moveRight = false;
+
+const crowdColors = ['#1e3a8a', '#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#ffffff', '#374151'];
+let crowdDots = [];
+
+function generateCrowd() {
+  crowdDots = [];
+  for (let i = 0; i < 450; i++) {
+    crowdDots.push({
+      x: Math.random(),
+      y: Math.random(),
+      c: crowdColors[Math.floor(Math.random() * crowdColors.length)]
+    });
+  }
+}
+
+function resizeCanvas() {
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+  
+  groundY = canvas.height * 0.52; 
+  portaW = canvas.width * 0.65;           
+  portaH = portaW * 0.45;                 
+  portaTopY = groundY - portaH;           
+  portaX = (canvas.width - portaW) / 2;   
+  
+  if (!keeper.isDiving) {
+    keeper.x = canvas.width / 2 - keeper.w / 2;
+    keeper.y = groundY - keeper.h;
+  }
+  generateCrowd();
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+const setupControl = (id, startFn, endFn) => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); startFn(); });
+  el.addEventListener('touchend', (e) => { e.preventDefault(); endFn(); });
+  el.addEventListener('mousedown', startFn); el.addEventListener('mouseup', endFn);
+};
+
+setupControl('leftBtn', () => moveLeft = true, () => moveLeft = false);
+setupControl('rightBtn', () => moveRight = true, () => moveRight = false);
+setupControl('diveBtn', triggerDive, () => {});
+
+function triggerDive() {
+  if (!keeper.isDiving && isPlaying && !blockLaunch) {
+    keeper.isDiving = true;
+    keeper.diveFrame = 0;
+    keeper.diveDir = moveLeft ? -1 : moveRight ? 1 : (Math.random() > 0.5 ? -1 : 1);
+  }
+}
+
+function launchBall() {
+  if (blockLaunch || !isPlaying) return;
+  ball.x = canvas.width / 2; 
+  ball.y = canvas.height * 0.95; 
+  
+  let targetX = portaX + 15 + Math.random() * (portaW - 30);
+  let targetY = portaTopY + 15 + (groundY - portaTopY) * 0.4;
+  let steps = Math.max(22, 55 - (level * 3)); 
+  
+  ball.vx = (targetX - ball.x) / steps;
+  ball.vy = (targetY - ball.y) / steps;
+  ball.active = true;
+}
+
+function update() {
+  if (!isPlaying) return;
+
+  let currentLevel = Math.floor(score / 3) + 1;
+  if (currentLevel !== level) {
+    level = currentLevel;
+    levelUpTimer = 60;
+    document.getElementById('level-display').innerText = `LIVELLO: ${level}`;
+    
+    if (level === 10 && !trophyUnlocked) {
+      isPlaying = false; trophyUnlocked = true; ball.active = false;
+      document.getElementById('controls').style.display = 'none';
+      document.getElementById('game-container').style.height = '100vh';
+      
+      document.getElementById('phase-pippa').style.display = 'block';
+      document.getElementById('phase-letter').style.display = 'none';
+      document.getElementById('trophy-popup').style.display = 'flex';
+      
+      resizeCanvas(); return;
+    }
+    blockLaunch = true; ball.active = false;
+    setTimeout(() => { blockLaunch = false; launchBall(); }, 1200);
+  }
+
+  if (!keeper.isDiving) {
+    if (moveLeft && keeper.x > portaX - 10) keeper.x -= keeper.speed;
+    if (moveRight && keeper.x < portaX + portaW - keeper.w + 10) keeper.x += keeper.speed;
+    keeper.y = groundY - keeper.h;
+  } else {
+    keeper.diveFrame++;
+    let f = keeper.diveFrame, duration = 20;
+    if (f <= duration) {
+      let nextX = keeper.x + keeper.diveDir * 8.5;
+      if (nextX >= portaX - 40 && nextX <= portaX + portaW - keeper.w + 40) keeper.x = nextX;
+      keeper.y -= Math.sin((f / duration) * Math.PI) * 6.0; 
+    } else {
+      keeper.isDiving = false; keeper.y = groundY - keeper.h;
+    }
+  }
+
+  if (ball.active && !blockLaunch) {
+    ball.x += ball.vx; ball.y += ball.vy; ball.spin += 0.15;
+
+    if (ball.vy < 0 && ball.y < groundY - 10 && ball.y > keeper.y - 15) {
+      let hx = keeper.x, hw = keeper.w;
+      if (keeper.isDiving) { hx = keeper.diveDir === -1 ? keeper.x - 35 : keeper.x; hw = keeper.w + 35; }
+
+      if (ball.x > hx - 8 && ball.x < hx + hw + 8 && ball.y > keeper.y && ball.y < keeper.y + keeper.h + 15) {
+        score++;
+        document.getElementById('score-display').innerText = `PARATE: ${score}`;
+        ball.active = false; flashColor = 'rgba(0, 255, 200, 0.1)';
+        const compliments = ["STREPITOSO!", "MIRACOLO!", "CHE PARATA!", "SUPER!"];
+        feedbackText = compliments[Math.floor(Math.random() * compliments.length)];
+        feedbackTimer = 30;
+        setTimeout(() => { if((Math.floor(score / 3) + 1) === level) launchBall(); }, 600);
+        return;
+      }
+    }
+    
+    if (ball.vy < 0 && ball.y <= keeper.y + 10) {
+      ball.active = false;
+      if (ball.x > portaX && ball.x < portaX + portaW && ball.y > portaTopY) {
+        lives--; shakeTimer = 12; flashColor = 'rgba(244, 63, 94, 0.35)';
+        feedbackText = "⚽ GOL! ⚽"; feedbackTimer = 35;
+        document.getElementById('lives-display').innerText = `VITE: ${'❤'.repeat(Math.max(0, lives))}`;
+        if (lives <= 0) { endGame(); return; }
+      } else {
+        feedbackText = "FUORI!"; feedbackTimer = 25;
+      }
+      setTimeout(() => { if((Math.floor(score / 3) + 1) === level) launchBall(); }, 800);
+    }
+  }
+}
+
+function draw() {
+  ctx.save();
+  if (shakeTimer > 0) { shakeTimer--; ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6); }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+  skyGrad.addColorStop(0, '#020617'); skyGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, groundY);
+
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(20, 40, 6, groundY - 140);
+  ctx.fillStyle = '#475569'; ctx.fillRect(10, 25, 26, 15);
+  ctx.fillStyle = '#fff'; ctx.fillRect(13, 28, 6, 4); ctx.fillRect(21, 28, 6, 4);
+  ctx.fillStyle = '#334155'; ctx.fillRect(canvas.width - 26, 40, 6, groundY - 140);
+  ctx.fillStyle = '#475569'; ctx.fillRect(canvas.width - 36, 25, 26, 15);
+  ctx.fillStyle = '#fff'; ctx.fillRect(canvas.width - 33, 28, 6, 4); ctx.fillRect(canvas.width - 25, 28, 4, 4);
+
+  let lightGradL = ctx.createLinearGradient(20, 25, canvas.width*0.3, groundY);
+  lightGradL.addColorStop(0, 'rgba(255,255,255,0.12)'); lightGradL.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = lightGradL; ctx.beginPath(); ctx.moveTo(23, 35); ctx.lineTo(0, groundY); ctx.lineTo(canvas.width*0.5, groundY); ctx.closePath(); ctx.fill();
+
+  let spaltiY = groundY - 35;
+  ctx.fillStyle = '#1e293b'; 
+  ctx.beginPath();
+  ctx.moveTo(0, spaltiY - 50);
+  ctx.quadraticCurveTo(canvas.width / 2, spaltiY - 20, canvas.width, spaltiY - 50);
+  ctx.lineTo(canvas.width, groundY - 10);
+  ctx.lineTo(0, groundY - 10);
+  ctx.closePath();
+  ctx.fill();
+
+  crowdDots.forEach(dot => {
+    let dx = dot.x * canvas.width;
+    let curveO = Math.sin(dot.x * Math.PI) * 15;
+    let dy = (spaltiY - 45) + (dot.y * 35) - curveO;
+    ctx.fillStyle = dot.c;
+    ctx.fillRect(dx, dy, 3, 3);
+  });
+
+  ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, spaltiY - 50); ctx.quadraticCurveTo(canvas.width/2, spaltiY - 20, canvas.width, spaltiY - 50); ctx.stroke();
+
+  let goalBackGrad = ctx.createLinearGradient(portaX, portaTopY, portaX, groundY);
+  goalBackGrad.addColorStop(0, '#090d16'); 
+  goalBackGrad.addColorStop(1, '#111827');
+  ctx.fillStyle = goalBackGrad;
+  ctx.fillRect(portaX, portaTopY, portaW, portaH);
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillRect(portaX, portaTopY, portaW, 10);
+
+  ctx.fillStyle = '#0f172a'; ctx.fillRect(0, groundY - 12, canvas.width, 12);
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1; ctx.strokeRect(0, groundY - 12, canvas.width, 12);
+  ctx.fillStyle = '#10b981'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText("⚽ NETLIFY CUP  •  BRIOSCHI GOALKEEPER PRO ⚽", canvas.width/2, groundY - 3);
+
+  let grassGrad = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+  grassGrad.addColorStop(0, '#047857'); grassGrad.addColorStop(1, '#065f46');
+  ctx.fillStyle = grassGrad; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  let stripW = canvas.width / 6;
+  for(let s = 0; s < 6; s += 2) {
+    ctx.fillRect(s * stripW, groundY, stripW, canvas.height - groundY);
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+  ctx.strokeRect(portaX - 35, groundY, portaW + 70, canvas.height - groundY);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1;
+  for (let i = portaX + 8; i < portaX + portaW; i += 8) {
+    ctx.beginPath(); ctx.moveTo(i, portaTopY); ctx.lineTo(i, groundY); ctx.stroke();
+  }
+  for (let j = portaTopY + 8; j < groundY; j += 8) {
+    ctx.beginPath(); ctx.moveTo(portaX, j); ctx.lineTo(portaX + portaW, j); ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5.5;
+  if(shakeTimer > 0) ctx.strokeStyle = '#f43f5e';
+  ctx.beginPath();
+  ctx.moveTo(portaX, groundY);
+  ctx.lineTo(portaX, portaTopY);
+  ctx.lineTo(portaX + portaW, portaTopY);
+  ctx.lineTo(portaX + portaW, groundY);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height * 0.95, 12, 0, Math.PI*2); ctx.fill();
+
+  if (ball.active) {
+    ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.spin);
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#000000'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(-3, -3, 6, 6); ctx.restore();
+  }
+
+  ctx.save();
+  if (keeper.isDiving) {
+    ctx.translate(keeper.x + keeper.w/2, keeper.y + keeper.h/2);
+    ctx.rotate(keeper.diveDir * 1.35); 
+    ctx.translate(-(keeper.x + keeper.w/2), -(keeper.y + keeper.h/2));
+  }
+  let kx = keeper.x + keeper.w / 2, ky = keeper.y;
+  ctx.fillStyle = '#164675'; ctx.fillRect(kx - 6, ky + 48, 3, 20); ctx.fillRect(kx + 3, ky + 48, 3, 20);
+  ctx.fillStyle = '#1e40af'; ctx.fillRect(kx - 7, ky + 68, 5, 5); ctx.fillRect(kx + 3, ky + 68, 5, 5);
+  let bodyGrad = ctx.createLinearGradient(kx - 10, ky, kx + 10, ky);
+  bodyGrad.addColorStop(0, '#1e6091'); bodyGrad.addColorStop(0.5, '#2a75ad'); bodyGrad.addColorStop(1, '#1a527e');
+  ctx.fillStyle = bodyGrad; ctx.beginPath(); ctx.moveTo(kx - 10, ky + 18); ctx.lineTo(kx + 10, ky + 18);
+  ctx.lineTo(kx + 8, ky + 48); ctx.lineTo(kx - 8, ky + 48); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(kx - 3, ky + 18); ctx.lineTo(kx, ky + 22); ctx.lineTo(kx + 3, ky + 18); ctx.stroke();
+  ctx.fillStyle = '#2a75ad';
+  if (keeper.isDiving) {
+    if (keeper.diveDir === -1) {
+      ctx.fillRect(kx - 24, ky + 10, 14, 5); ctx.fillRect(kx + 8, ky + 15, 12, 5);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(kx - 28, ky + 9, 4, 7); ctx.fillStyle = '#94a3b8'; ctx.fillRect(kx - 35, ky + 7, 7, 10);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(kx + 20, ky + 14, 4, 7); ctx.fillStyle = '#94a3b8'; ctx.fillRect(kx + 24, ky + 12, 7, 10);
+    } else {
+      ctx.fillRect(kx + 8, ky + 10, 14, 5); ctx.fillRect(kx - 20, ky + 15, 12, 5);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(kx + 22, ky + 9, 4, 7); ctx.fillStyle = '#94a3b8'; ctx.fillRect(kx + 26, ky + 7, 7, 10);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(kx - 24, ky + 14, 4, 7); ctx.fillStyle = '#94a3b8'; ctx.fillRect(kx - 31, ky + 12, 7, 10);
+    }
+  } else {
+    ctx.fillRect(kx - 17, ky + 18, 7, 6); ctx.fillRect(kx + 10, ky + 18, 7, 6);
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(kx - 21, ky + 17, 4, 8); ctx.fillRect(kx + 17, ky + 17, 4, 8);
+    ctx.fillStyle = '#94a3b8'; ctx.fillRect(kx - 28, ky + 15, 7, 11); ctx.fillRect(kx + 21, ky + 15, 7, 11);
+  }
+  ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.moveTo(kx - 5.5, ky + 4); ctx.lineTo(kx + 5.5, ky + 4); ctx.lineTo(kx + 5, ky + 12); ctx.lineTo(kx + 3, ky + 16); ctx.lineTo(kx - 3, ky + 16); ctx.lineTo(kx - 5, ky + 12); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#334155'; ctx.fillRect(kx - 2.5, ky + 8, 1.2, 1); ctx.fillRect(kx + 1.2, ky + 8, 1.2, 1);
+  ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.moveTo(kx - 5, ky + 12); ctx.lineTo(kx + 5, ky + 12); ctx.lineTo(kx + 3, ky + 16.5); ctx.lineTo(kx - 3, ky + 16.5);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(kx, ky + 5, 6.5, Math.PI, 0, false); ctx.fill();
+  ctx.restore();
+
+  if (feedbackTimer > 0) {
+    feedbackTimer--; ctx.fillStyle = feedbackText.includes("GOL") ? '#f43f5e' : '#00ffcc';
+    ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(feedbackText, canvas.width / 2, canvas.height * 0.42);
+  }
+  if (levelUpTimer > 0) {
+    levelUpTimer--; ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`⚡ LIVELLO ${level} ⚡`, canvas.width / 2, canvas.height * 0.30);
+  }
+}
+
+function showLetterPhase() {
+  document.getElementById('phase-pippa').style.display = 'none';
+  document.getElementById('phase-letter').style.display = 'block';
+}
+
+function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  score = 0; lives = 9; level = 1; feedbackTimer = 0; levelUpTimer = 0; trophyUnlocked = false; blockLaunch = false;
+  document.getElementById('score-display').innerText = "PARATE: 0";
+  document.getElementById('level-display').innerText = "LIVELLO: 1";
+  document.getElementById('lives-display').innerText = "VITE: ❤❤❤❤❤❤❤❤❤";
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('game-container').style.height = '58vh';
+  resizeCanvas(); isPlaying = true; launchBall();
+}
+function closeTrophy() {
+  document.getElementById('trophy-popup').style.display = 'none';
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('game-container').style.height = '58vh';
+  resizeCanvas(); isPlaying = true; launchBall();
+}
+function endGame() {
+  isPlaying = false;
+  if (score <= 2) {
+    document.getElementById('overlayTitle').innerText = "BRIOSCHI PIPPA!!";
+    document.getElementById('overlayText').innerText = `Solo ${score} parate... Rigioca subito!`;
+  } else {
+    document.getElementById('overlayTitle').innerText = "GRANDE BRIOSCHI!!";
+    document.getElementById('overlayText').innerText = `Hai fatto ${score} parate arrivando al Livello ${level}!`;
+  }
+  document.getElementById('mainBtn').innerText = "GIOCA ANCORA";
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+resizeCanvas();
+gameLoop();
+</script>
+</body>
+</html>
